@@ -1,0 +1,41 @@
+# Disable directory listings and CGI execution
+Options -Indexes -ExecCGI
+
+# Deny access to any executable scripts
+<FilesMatch "\.(php|phtml|php3|php4|php5|php7|php8|phps|pl|py|jsp|asp|sh|cgi|phar|inc)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Only permit safe static image files
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|ico)$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Allow from all
+    </IfModule>
+</FilesMatch>
+
+# Turn off PHP engines across all versions
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# Remove any PHP/CGI handlers
+<IfModule mod_mime.c>
+    RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phar .inc
+    RemoveType .php .phtml .php3 .php4 .php5 .php7 .php8 .phar .inc
+</IfModule>

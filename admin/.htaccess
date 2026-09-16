@@ -1,0 +1,13 @@
+# Disable directory browsing inside admin
+Options -Indexes
+
+# Prevent direct web access to partial template includes (_nav.php, _sidebar.php)
+<FilesMatch "^_">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

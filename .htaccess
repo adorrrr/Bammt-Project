@@ -1,0 +1,76 @@
+# ==============================================================================
+# BAMMT Official Platform — Production Apache Configuration (.htaccess)
+# Domain: https://bammt.com
+# ==============================================================================
+
+# 1. Directory Hardening & Server Information Cloaking
+Options -Indexes -MultiViews +FollowSymLinks
+ServerSignature Off
+
+# 2. Production HTTP Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
+# 3. Block Access to Hidden & Sensitive System Files (.env, .git, .sql, .md, .log, backups, configs)
+<FilesMatch "^\.|\.(sql|md|log|ini|json|lock|bak|sh|bat|yml|yaml|env|git)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# 4. Clean URL Rewrite Engine
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Force HTTPS on live domain (skips localhost for dev compatibility)
+    RewriteCond %{HTTP_HOST} !^localhost [NC]
+    RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Prevent direct HTTP access to internal system code directories
+    RewriteRule ^(config|includes|database)(/.*)?$ - [F,L]
+
+    # Block public access to one-time setup/installer scripts in production
+    RewriteRule ^setup_admin\.php$ - [F,L]
+    RewriteRule ^database/create_admin\.php$ - [F,L]
+
+    # 5. Custom Student Verification & Result Routes (e.g. /verify/AD-123 or /result/RI-408)
+    RewriteRule ^verify/([A-Za-z0-9\-\/]+)/?$ certificate.php?reg=$1 [L,QSA]
+    RewriteRule ^result/([A-Za-z0-9\-\/]+)/?$ certificate.php?reg=$1 [L,QSA]
+    RewriteRule ^v/([A-Za-z0-9\-\/]+)/?$ certificate.php?reg=$1 [L,QSA]
+
+    # 6. Public Section Routes (e.g. /verify, /about, /notices, /contact)
+    RewriteRule ^(verify|about|notices|contact)/?$ index.php [L,QSA]
+
+    # 7. Admin Namespace Routing
+    RewriteRule ^admin/?$ admin/dashboard.php [L,QSA]
+
+    # 8. Serve Existing Files and Directories Directly (CSS, JS, Images, Uploads)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # 9. Clean Extensionless Routing for PHP scripts (e.g. /admin/students -> /admin/students.php)
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^(.*)$ $1.php [L,QSA]
+
+    # 10. Route any invalid / non-existent request to clean 404 page (never expose source code)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}.php !-f
+    RewriteRule ^.*$ 404.php [L]
+</IfModule>
+
+# 11. Apache Custom ErrorDocument Fallbacks
+ErrorDocument 404 /404.php
+ErrorDocument 403 /404.php
