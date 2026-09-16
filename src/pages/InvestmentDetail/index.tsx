@@ -1,0 +1,199 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { Container } from '../../components/common/Container';
+import { BackButton } from '../../components/common/BackButton';
+import { InvestorInterestModal } from '../../components/forms/InvestorInterestModal';
+import { InvestmentTimeline } from '../../components/investment/InvestmentTimeline';
+import { investmentService } from '../../services/investmentService';
+import { InvestmentOpportunity } from '../../types/investment';
+import { formatTaka, formatDays, toBanglaDigits, formatQuantity } from '../../utils/formatters';
+import { ShieldAlert, ShieldCheck } from 'lucide-react';
+
+export const InvestmentDetailPage: React.FC = () => {
+  const { slug } = useParams<{ slug: string }>();
+  const [opportunity, setOpportunity] = useState<InvestmentOpportunity | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isInterestModalOpen, setIsInterestModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (slug) {
+      setLoading(true);
+      investmentService.getInvestmentBySlug(slug).then((res) => {
+        setOpportunity(res);
+        setLoading(false);
+      });
+    }
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <Container className="py-20 text-center font-mono text-sm text-gangchill-ink/50">
+        পরিকল্পনার বিবরণ লোড হচ্ছে...
+      </Container>
+    );
+  }
+
+  if (!opportunity) {
+    return (
+      <Container className="py-20 text-center space-y-4">
+        <h2 className="text-2xl font-bold font-serifBangla text-gangchill-ink">
+          পরিকল্পনাটি খুঁজে পাওয়া যায়নি
+        </h2>
+        <Link to="/invest" className="text-sm font-semibold text-gangchill-green underline">
+          সকল বিনিয়োগ পরিকল্পনায় ফিরে যান
+        </Link>
+      </Container>
+    );
+  }
+
+  const remainingCapital = Math.max(0, opportunity.requiredCapital - opportunity.raisedCapital);
+  const percentage = Math.min(
+    Math.round((opportunity.raisedCapital / opportunity.requiredCapital) * 100),
+    100
+  );
+  const isOpen = opportunity.status === 'open';
+
+  return (
+    <div className="bg-gangchill-canvas text-gangchill-ink min-h-screen py-8 sm:py-16">
+      <Container size="md">
+        <div className="mb-6">
+          <BackButton to="/invest" label="বিনিয়োগ তালিকায় ফিরে যান" />
+        </div>
+
+        {/* 1. Large Visual */}
+        <div className="w-full aspect-16/10 sm:aspect-21/10 overflow-hidden bg-gangchill-surface border border-gangchill-ink/10 mb-8 sm:mb-12">
+          <img
+            src={opportunity.images[0]}
+            alt={opportunity.title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        {/* 2. Story & Structure */}
+        <div className="space-y-8 max-w-3xl">
+          <div>
+            <div className="text-xs font-bangla font-semibold text-gangchill-earth tracking-wide mb-2">
+              Gangchill মাছ সংগ্রহ পরিকল্পনা · {opportunity.location}
+            </div>
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold font-serifBangla text-gangchill-green-deep leading-tight mb-4">
+              {opportunity.title}
+            </h1>
+            <p className="text-sm sm:text-lg text-gangchill-ink/80 leading-relaxed font-light border-l-2 border-gangchill-gold pl-3 sm:pl-4">
+              {opportunity.description}
+            </p>
+          </div>
+
+          {/* Capital Breakdown Box */}
+          <div className="p-4 sm:p-6 bg-gangchill-surface border border-gangchill-border rounded-2xl sm:rounded-natural-lg shadow-warm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-gangchill-ink/8 pb-4">
+              <div>
+                <div className="text-xs text-gangchill-ink-muted">এই stock সংগ্রহের জন্য Gangchill তুলছে:</div>
+                <div className="text-2xl sm:text-4xl font-bold font-serifBangla text-gangchill-green">
+                  {formatTaka(opportunity.requiredCapital)}
+                </div>
+              </div>
+              <div className="text-xs font-mono text-gangchill-ink-muted mt-2 sm:mt-0">
+                অবশিষ্ট প্রয়োজন: {formatTaka(remainingCapital)} ({toBanglaDigits(percentage)}% সংগৃহীত)
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 text-[11px] sm:text-sm pt-2">
+              <div>
+                <span className="text-gangchill-ink-muted block truncate">ন্যূনতম অংশগ্রহণ</span>
+                <strong className="text-sm sm:text-base text-gangchill-ink block">{formatTaka(opportunity.minimumInvestment)}</strong>
+              </div>
+              <div>
+                <span className="text-gangchill-ink-muted block truncate">Profit Share</span>
+                <strong className="text-sm sm:text-base text-gangchill-clay font-bold block">{toBanglaDigits(opportunity.profitPercentage)}%</strong>
+              </div>
+              <div>
+                <span className="text-gangchill-ink-muted block truncate">মেয়াদকাল</span>
+                <strong className="text-sm sm:text-base text-gangchill-ink block">{formatDays(opportunity.durationDays)}</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. The Transparent Journey: "আমার টাকা কোথায় যাচ্ছে?" */}
+          <div className="space-y-6 pt-4">
+            <h2 className="text-xl sm:text-2xl font-bold font-serifBangla text-gangchill-ink">
+              আমার অর্থ কোথায় যাচ্ছে ও কীভাবে পরিচালিত হবে?
+            </h2>
+            <p className="text-xs sm:text-sm text-gangchill-ink-muted leading-relaxed">
+              বিনিয়োগকারীদের অর্থ কোনো কাল্পনিক ফান্ডে নয়, সরাসরি উল্লেখিত মাছ লটের ক্রয় ও কোল্ডচেইন হস্তান্তরে ব্যবহৃত হয়:
+            </p>
+
+            <p className="text-xs text-gangchill-ink-muted leading-relaxed">
+              {opportunity.procurementPlan.sourceRegion} থেকে {formatQuantity(opportunity.procurementPlan.targetQuantity, opportunity.procurementPlan.unit)} সংগ্রহ করে {opportunity.procurementPlan.targetBuyers}-এর কাছে সরবরাহ করা হবে ({opportunity.procurementPlan.purchaseWindow} সংগ্রহ উইন্ডো, {opportunity.procurementPlan.salesWindow} বিক্রয় উইন্ডো)।
+            </p>
+
+            <InvestmentTimeline timeline={opportunity.timeline} />
+          </div>
+
+          {/* 3b. Risk & Security Disclosures (previously captured in data but never shown) */}
+          {((opportunity.risks && opportunity.risks.length > 0) ||
+            (opportunity.securityAndCompliance && opportunity.securityAndCompliance.length > 0)) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2">
+              {opportunity.risks && opportunity.risks.length > 0 && (
+                <div className="p-4 sm:p-5 rounded-natural-lg border border-amber-200 bg-amber-50/60 space-y-2.5">
+                  <div className="flex items-center gap-2 text-sm font-bold text-amber-800">
+                    <ShieldAlert className="w-4 h-4 shrink-0" />
+                    <span>ঝুঁকি বিবেচনা</span>
+                  </div>
+                  <ul className="space-y-1.5 text-xs text-amber-900/90 leading-relaxed list-disc pl-4">
+                    {opportunity.risks.map((risk, idx) => (
+                      <li key={idx}>{risk}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {opportunity.securityAndCompliance && opportunity.securityAndCompliance.length > 0 && (
+                <div className="p-4 sm:p-5 rounded-natural-lg border border-gangchill-border bg-gangchill-surface space-y-2.5">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gangchill-green">
+                    <ShieldCheck className="w-4 h-4 shrink-0" />
+                    <span>নিরাপত্তা ও সম্মতি</span>
+                  </div>
+                  <ul className="space-y-1.5 text-xs text-gangchill-ink-muted leading-relaxed list-disc pl-4">
+                    {opportunity.securityAndCompliance.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 4. Action */}
+          <div className="pt-8 border-t border-gangchill-ink/8">
+            {isOpen ? (
+              <div className="space-y-3">
+                <button
+                  onClick={() => setIsInterestModalOpen(true)}
+                  className="w-full sm:w-auto px-4 sm:px-8 py-3.5 sm:py-4 rounded-xl bg-gangchill-green text-white font-bold text-sm sm:text-base hover:bg-gangchill-green-deep active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer text-center"
+                >
+                  <span className="leading-snug">
+                    এই সংগ্রহে অংশ নিতে চান?{' '}
+                    <span className="font-normal opacity-95 inline-block sm:inline">(আগ্রহ প্রকাশ করুন)</span>
+                  </span>
+                  <span className="shrink-0 text-base">→</span>
+                </button>
+                <p className="text-xs text-gangchill-ink-muted">
+                  Phase 1-এ কোনো অনলাইন ট্রানজেকশন নেই; প্রাথমিক আগ্রহপত্র গ্রহণের পর Gangchill ইনভেস্টমেন্ট ডেস্ক যোগাযোগ করবে।
+                </p>
+              </div>
+            ) : (
+              <div className="p-4 bg-gangchill-surface text-gangchill-ink-muted text-sm font-medium border border-gangchill-border rounded-natural">
+                এই প্রকল্পের তহবিল সংগ্রহ সফলভাবে সম্পন্ন হয়েছে।
+              </div>
+            )}
+          </div>
+        </div>
+      </Container>
+
+      <InvestorInterestModal
+        isOpen={isInterestModalOpen}
+        onClose={() => setIsInterestModalOpen(false)}
+        opportunity={opportunity}
+      />
+    </div>
+  );
+};
