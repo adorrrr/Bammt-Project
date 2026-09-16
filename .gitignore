@@ -1,0 +1,50 @@
+# ==========================================
+# BAMMT Platform — Git Ignore Rules
+# ==========================================
+
+# 1. Environment & Sensitive Credentials
+.env
+.env.*
+!.env.example
+config/database.php
+!config/database.example.php
+
+# 2. User Uploads & Student Photos (Preserve structure and security files)
+uploads/photos/*
+!uploads/photos/.gitkeep
+!uploads/photos/.htaccess
+!uploads/.htaccess
+
+# 3. Database Dumps & Backups
+*.sql.bak
+*.sql.gz
+*.sql.zip
+backup/
+backups/
+dump.sql
+
+# 4. Logs & Error Traces
+*.log
+error_log
+php_error.log
+.cache/
+
+# 5. OS Generated Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# 6. IDE & Editor Folders
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*~
+
+# 7. Compressed Archives
+*.zip
+*.tar.gz
+*.rar
+*.7z
