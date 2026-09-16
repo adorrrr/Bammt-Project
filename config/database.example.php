@@ -1,13 +1,13 @@
 <?php
 /**
- * Database connection template.
- * Copy this file to config/database.php and add your actual database credentials.
+ * Database connection settings (Sample Template).
+ * Copy this file to database.php and fill in your real credentials.
  */
 
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('DB_NAME') ?: 'your_database_name');
-define('DB_USER', getenv('DB_USER') ?: 'your_database_user');
-define('DB_PASS', getenv('DB_PASS') ?: 'your_database_password');
+define('DB_NAME', getenv('DB_NAME') ?: 'YOUR_DATABASE_NAME');
+define('DB_USER', getenv('DB_USER') ?: 'YOUR_DATABASE_USER');
+define('DB_PASS', getenv('DB_PASS') ?: 'YOUR_DATABASE_PASSWORD');
 define('DB_CHARSET', 'utf8mb4');
 
 /**
